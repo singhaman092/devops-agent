@@ -1,0 +1,12 @@
+repos:
+  my-service:
+    clone_url: "https://dev.azure.com/org/project/_git/my-service"
+    platform: azure_devops
+    pr_create_url_template: "https://dev.azure.com/org/project/_git/my-service/pullrequestcreate?sourceRef=${branch_name}"
+    pr_view_url_template: "https://dev.azure.com/org/project/_git/my-service/pullrequest/${pr_id}"
+    pr_template_path: ".azuredevops/pull_request_template.md"
+    title_convention: "^(feat|fix|chore|docs)\\(.*\\): .+"
+    default_reviewers:
+      - "team-lead@example.com"
+    required_labels:
+      - "auto-deploy"

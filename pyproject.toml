@@ -1,0 +1,60 @@
+[project]
+name = "devops-agent"
+version = "0.1.0"
+description = "Local Windows-only MCP tool that executes DevOps tasks composed by developers"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp[cli]>=1.0.0",
+    "playwright>=1.40.0",
+    "mss>=9.0.0",
+    "pywin32>=306",
+    "pyautogui>=0.9.54",
+    "pygetwindow>=0.0.9",
+    "rapidocr-onnxruntime>=1.3.0",
+    "pydantic>=2.5.0",
+    "pyyaml>=6.0.0",
+    "watchdog>=4.0.0",
+    "structlog>=24.0.0",
+    "httpx>=0.27.0",
+    "typer>=0.12.0",
+    "rich>=13.0.0",
+]
+
+[project.scripts]
+devops-agent = "devops_agent.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/devops_agent"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+mypy_path = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.4.0",
+    "mypy>=1.10.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "types-pyyaml>=6.0.0",
+]

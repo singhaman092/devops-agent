@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "devops-agent": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "C:\\Code\\devops-agent",
+        "devops-agent",
+        "serve"
+      ]
+    }
+  }
+}

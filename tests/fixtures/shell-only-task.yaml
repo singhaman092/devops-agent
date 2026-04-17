@@ -1,0 +1,17 @@
+name: shell-only-test
+description: "E2E test task using only shell steps"
+steps:
+  - step: shell.run
+    name: "Create test file"
+    params:
+      command: "echo 'hello from devops-agent' > test-output.txt"
+
+  - step: shell.run
+    name: "Read test file"
+    params:
+      command: "cat test-output.txt"
+
+  - step: shell.run
+    name: "Clean up"
+    params:
+      command: "rm -f test-output.txt"

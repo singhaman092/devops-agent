@@ -1,0 +1,41 @@
+name: hotfix
+description: "Quick hotfix: clone, branch, apply fix, commit, push, PR"
+references:
+  repo: my-service
+steps:
+  - step: git.clone
+    name: "Clone repository"
+    params:
+      url: "${clone_url}"
+
+  - step: git.branch
+    name: "Create hotfix branch"
+    params:
+      branch: "hotfix/${branch_suffix}"
+      cwd: "${clone_dir}"
+      base: main
+
+  - step: shell.run
+    name: "Apply fix"
+    params:
+      command: "${fix_command}"
+      cwd: "${clone_dir}"
+
+  - step: git.commit
+    name: "Commit fix"
+    params:
+      message: "fix: ${commit_message}"
+      cwd: "${clone_dir}"
+
+  - step: git.push
+    name: "Push hotfix branch"
+    params:
+      branch: "hotfix/${branch_suffix}"
+      cwd: "${clone_dir}"
+
+  - step: pr.create
+    name: "Create pull request"
+    params:
+      title: "fix: ${pr_title}"
+      source_branch: "hotfix/${branch_suffix}"
+      target_branch: main

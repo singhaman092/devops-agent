@@ -1,0 +1,11 @@
+work_dir: "~/.devops-agent/work"
+edge_profile_dir: "~/.devops-agent/edge-profile"
+default_merge_detection: poll
+poll_interval_seconds: 60
+poll_timeout_seconds: 3600
+log_level: INFO
+log_json: true
+login_targets:
+  - "https://login.microsoftonline.com"
+  - "https://dev.azure.com"
+  - "https://app.slack.com"

@@ -1,0 +1,14 @@
+environments:
+  staging:
+    deploy_portal_url: "https://portal.azure.com/#resource/my-staging-app"
+    deploy_trigger: portal_click
+    required_params:
+      version: "Git SHA or tag to deploy"
+    health_checks:
+      - url: "https://staging.example.com/health"
+        expected_status: 200
+        expected_body: "ok"
+        timeout_seconds: 300
+    monitor_timeout_seconds: 600
+    repos:
+      - my-service

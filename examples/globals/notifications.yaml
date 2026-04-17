@@ -1,0 +1,15 @@
+channels:
+  dev-deploys:
+    url: "https://app.slack.com/client/T12345/C12345"
+    platform: slack
+  team-alerts:
+    url: "https://teams.microsoft.com/l/channel/19%3Axyz/General"
+    platform: teams
+
+templates:
+  task_started: "🚀 Task ${task_id} started: ${task_config_name}"
+  task_blocked: "⚠️ Task ${task_id} blocked at step '${failed_step}': ${error_message}"
+  task_complete: "✅ Task ${task_id} completed successfully"
+  pr_created: "📋 PR created: ${pr_url}"
+  deploy_triggered: "🔄 Deploy triggered for ${env} (version: ${version})"
+  deploy_succeeded: "✅ Deploy to ${env} succeeded — health checks passing"

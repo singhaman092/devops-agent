@@ -1,0 +1,83 @@
+name: deploy-new-env
+description: "Clone repo, create branch, make changes, PR, wait merge, deploy, verify"
+references:
+  repo: my-service
+  env: staging
+merge_detection:
+  mode: poll
+  interval_seconds: 60
+  timeout_seconds: 3600
+notifications:
+  task_started: [dev-deploys]
+  task_blocked: [dev-deploys, team-alerts]
+  task_complete: [dev-deploys]
+  pr_created: [dev-deploys]
+  deploy_succeeded: [dev-deploys]
+
+steps:
+  - step: shell.run
+    name: "Clone repository"
+    params:
+      command: "git clone ${clone_url} repo"
+
+  - step: git.branch
+    name: "Create feature branch"
+    params:
+      branch: "deploy/${branch_suffix}"
+      cwd: "${work_dir}/repo"
+
+  - step: shell.run
+    name: "Apply changes"
+    params:
+      command: "${change_command}"
+      cwd: "${work_dir}/repo"
+
+  - step: git.commit
+    name: "Commit changes"
+    params:
+      message: "${commit_message}"
+      cwd: "${work_dir}/repo"
+
+  - step: git.push
+    name: "Push branch"
+    params:
+      branch: "deploy/${branch_suffix}"
+      cwd: "${work_dir}/repo"
+
+  - step: pr.create
+    name: "Create pull request"
+    params:
+      title: "${pr_title}"
+      description: "${pr_description}"
+      source_branch: "deploy/${branch_suffix}"
+      target_branch: main
+
+  - step: notify.send
+    name: "Notify PR created"
+    params:
+      channel: dev-deploys
+      template: pr_created
+
+  - step: pr.wait_merge
+    name: "Wait for PR merge"
+    params:
+      mode: poll
+
+  - step: deploy.trigger
+    name: "Trigger deployment"
+    params:
+      click_selectors:
+        - "[data-testid='deploy-button']"
+
+  - step: monitor.http_check
+    name: "Verify health"
+    params:
+      url: "https://staging.example.com/health"
+      expected_status: 200
+      timeout_seconds: 300
+
+  - step: notify.send
+    name: "Notify deploy success"
+    params:
+      channel: dev-deploys
+      template: deploy_succeeded

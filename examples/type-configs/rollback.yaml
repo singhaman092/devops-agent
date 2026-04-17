@@ -1,0 +1,30 @@
+name: rollback
+description: "Rollback: trigger deploy of a previous version, verify health"
+references:
+  repo: my-service
+  env: staging
+steps:
+  - step: deploy.trigger
+    name: "Trigger rollback deploy"
+    params:
+      click_selectors: ${deploy_selectors}
+
+  - step: monitor.http_check
+    name: "Verify health after rollback"
+    params:
+      url: "${health_url}"
+      expected_status: 200
+      timeout_seconds: 300
+
+  - step: monitor.version_match
+    name: "Verify rolled-back version"
+    params:
+      url: "${version_url}"
+      expected_version: "${rollback_version}"
+      timeout_seconds: 300
+
+  - step: notify.send
+    name: "Notify rollback complete"
+    params:
+      channel: dev-deploys
+      message: "Rollback to ${rollback_version} completed for ${env}"
