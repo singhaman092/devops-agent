@@ -210,6 +210,173 @@ def create_server() -> FastMCP:
             "notification_templates": list(notifs.templates.keys()),
         }
 
+    # ── REPO SETUP TOOL ──────────────────────────────────────────────────────
+    # One-command setup: give it a repo URL, it figures out everything else.
+
+    @mcp.tool()
+    def setup_repo(repo_url: str, short_name: str = "") -> dict[str, Any]:
+        """Set up a repo from just its URL. Auto-detects platform, generates PR URLs, login targets, and pipeline config.
+
+        This is the FIRST tool to call when setting up a new repo. It:
+        1. Detects the platform (bitbucket, github, gitlab, azure_devops) from the URL
+        2. Generates PR creation and view URL templates
+        3. Adds the repo to repos.yaml
+        4. Creates an environment entry pointing to the pipelines/actions page
+        5. Adds login targets to config.yaml
+        6. Tells the user to run 'devops-agent init' to authenticate
+
+        After this, the AI agent can use screenshot_url and inspect_page to build task configs.
+
+        Args:
+            repo_url: The repo URL (e.g., https://bitbucket.org/myteam/my-repo or https://github.com/org/repo)
+            short_name: Optional short name for the repo (auto-generated from URL if empty)
+        """
+        import re
+        from urllib.parse import urlparse
+
+        url = repo_url.rstrip("/").rstrip(".git")
+        parsed = urlparse(url)
+        host = parsed.hostname or ""
+        path_parts = [p for p in parsed.path.strip("/").split("/") if p]
+
+        # Detect platform
+        platform = ""
+        if "bitbucket.org" in host:
+            platform = "bitbucket"
+        elif "github.com" in host:
+            platform = "github"
+        elif "gitlab" in host:
+            platform = "gitlab"
+        elif "dev.azure.com" in host or "visualstudio.com" in host:
+            platform = "azure_devops"
+        else:
+            return {"error": f"Could not detect platform from URL: {repo_url}. Supported: bitbucket.org, github.com, gitlab.com, dev.azure.com"}
+
+        # Extract workspace/org and repo name
+        if platform == "azure_devops":
+            # dev.azure.com/org/project/_git/repo
+            if len(path_parts) >= 4 and path_parts[2] == "_git":
+                org, project, _, repo_name = path_parts[0], path_parts[1], path_parts[2], path_parts[3]
+                base = f"https://dev.azure.com/{org}/{project}/_git/{repo_name}"
+            else:
+                return {"error": f"Could not parse Azure DevOps URL: {repo_url}. Expected: https://dev.azure.com/org/project/_git/repo"}
+        elif len(path_parts) >= 2:
+            workspace = path_parts[0]
+            repo_name = path_parts[1]
+            base = f"https://{host}/{workspace}/{repo_name}"
+        else:
+            return {"error": f"Could not parse repo URL: {repo_url}. Expected: https://host/workspace/repo"}
+
+        # Auto-generate short name
+        if not short_name:
+            short_name = repo_name
+
+        # Generate platform-specific URLs
+        pr_create = ""
+        pr_view = ""
+        pipelines_url = ""
+        login_target = ""
+        login_dashboard = ""
+
+        if platform == "bitbucket":
+            pr_create = f"{base}/pull-requests/new?source=${{branch_name}}"
+            pr_view = f"{base}/pull-requests/${{pr_id}}"
+            pipelines_url = f"{base}/pipelines"
+            login_dashboard = "https://bitbucket.org/dashboard/overview"
+            login_target = pipelines_url
+
+        elif platform == "github":
+            pr_create = f"{base}/compare/${{branch_name}}?expand=1"
+            pr_view = f"{base}/pull/${{pr_id}}"
+            pipelines_url = f"{base}/actions"
+            login_dashboard = "https://github.com/login"
+            login_target = pipelines_url
+
+        elif platform == "gitlab":
+            pr_create = f"{base}/-/merge_requests/new?merge_request[source_branch]=${{branch_name}}"
+            pr_view = f"{base}/-/merge_requests/${{pr_id}}"
+            pipelines_url = f"{base}/-/pipelines"
+            login_dashboard = f"https://{host}/users/sign_in"
+            login_target = pipelines_url
+
+        elif platform == "azure_devops":
+            pr_create = f"{base}/pullrequestcreate?sourceRef=${{branch_name}}"
+            pr_view = f"{base}/pullrequest/${{pr_id}}"
+            pipelines_url = f"https://dev.azure.com/{org}/{project}/_build"
+            login_dashboard = "https://login.microsoftonline.com"
+            login_target = f"https://dev.azure.com/{org}"
+
+        # ── Update repos.yaml ──────────────────────────────────────────────
+        from devops_agent.config.loader import load_repos_config
+        config_dir = get_config_dir()
+        repos = load_repos_config(config_dir)
+        repo_data = repos.model_dump()
+
+        clone_url = repo_url if repo_url.endswith(".git") else repo_url + ".git"
+        repo_data["repos"][short_name] = {
+            "clone_url": clone_url,
+            "platform": platform,
+            "pr_create_url_template": pr_create,
+            "pr_view_url_template": pr_view,
+            "pr_template_path": "",
+            "title_convention": "",
+            "default_reviewers": [],
+            "required_labels": [],
+        }
+
+        repos_yaml = yaml.dump(repo_data, default_flow_style=False, sort_keys=False)
+        (config_dir / "repos.yaml").write_text(repos_yaml, encoding="utf-8")
+
+        # ── Update environments.yaml ───────────────────────────────────────
+        from devops_agent.config.loader import load_environments_config
+        envs = load_environments_config(config_dir)
+        env_data = envs.model_dump()
+
+        env_name = f"{short_name}-pipelines"
+        env_data["environments"][env_name] = {
+            "deploy_portal_url": pipelines_url,
+            "deploy_trigger": "portal_click",
+            "required_params": {},
+            "health_checks": [],
+            "monitor_timeout_seconds": 600,
+            "repos": [short_name],
+        }
+
+        envs_yaml = yaml.dump(env_data, default_flow_style=False, sort_keys=False)
+        (config_dir / "environments.yaml").write_text(envs_yaml, encoding="utf-8")
+
+        # ── Update config.yaml login targets ───────────────────────────────
+        config = load_agent_config(config_dir)
+        config_data = yaml.safe_load((config_dir / "config.yaml").read_text(encoding="utf-8")) or {}
+
+        existing_targets = config_data.get("login_targets", []) or []
+        new_targets = []
+        for t in [login_dashboard, login_target]:
+            if t and t not in existing_targets:
+                new_targets.append(t)
+
+        if new_targets:
+            config_data["login_targets"] = existing_targets + new_targets
+            config_yaml = yaml.dump(config_data, default_flow_style=False, sort_keys=False)
+            (config_dir / "config.yaml").write_text(config_yaml, encoding="utf-8")
+
+        result: dict[str, Any] = {
+            "status": "configured",
+            "short_name": short_name,
+            "platform": platform,
+            "repo_url": clone_url,
+            "pipelines_url": pipelines_url,
+            "environment": env_name,
+            "pr_create_url": pr_create,
+            "pr_view_url": pr_view,
+        }
+
+        if new_targets:
+            result["new_login_targets"] = new_targets
+            result["action_required"] = "New login targets added. Tell the user to run: uv run devops-agent init"
+
+        return result
+
     # ── CONFIG FILE TOOLS ─────────────────────────────────────────────────────
     # These give the AI agent access to ~/.devops-agent/ config files
     # since the agent typically only has access to the repo directory.
