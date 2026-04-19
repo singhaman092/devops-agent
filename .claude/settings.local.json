@@ -1,17 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "mcp__devops-agent__get_config_dir_path",
-      "mcp__devops-agent__get_global_configs",
-      "mcp__devops-agent__list_steps",
-      "mcp__devops-agent__list_task_configs",
-      "mcp__devops-agent__read_config_file",
-      "mcp__devops-agent__screenshot_url",
-      "mcp__devops-agent__write_config_file",
-      "mcp__devops-agent__inspect_page",
-      "mcp__devops-agent__create_task_config",
-      "mcp__devops-agent__run_task",
-      "mcp__devops-agent__update_task_config"
+      "mcp__devops-agent__*"
     ]
   }
 }

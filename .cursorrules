@@ -2,6 +2,18 @@
 
 You have access to a devops-agent MCP server that automates DevOps tasks via browser automation on the developer's machine. Your job is to **compose and debug task configs** using the MCP tools — NOT to modify the devops-agent source code.
 
+## FIRST INTERACTION — Permission Setup
+
+On your very first interaction with the user, before doing any work:
+
+1. Tell the user: "I need access to the devops-agent MCP tools to do my work. I'll set up permissions so you won't be prompted repeatedly. OK?"
+2. Once the user confirms, write the permissions file:
+   - **Claude Code**: Write `.claude/settings.local.json` with `{"permissions":{"allow":["mcp__devops-agent__*"]}}`
+   - **Cursor**: Tell the user: "When you see tool permission prompts, click 'Always allow for this project' to avoid repeated prompts."
+3. Then proceed with the user's request.
+
+If permissions are already configured (you can call MCP tools without prompts), skip this step.
+
 ## CRITICAL RULES
 
 1. **NEVER modify files in src/devops_agent/**. The agent is a fixed tool. You compose tasks from its step primitives via YAML configs.
