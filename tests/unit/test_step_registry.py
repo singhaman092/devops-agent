@@ -13,9 +13,12 @@ class TestStepRegistry:
         steps = list_steps()
         expected = [
             "browser.click",
+            "browser.eval",
             "browser.fill",
             "browser.navigate",
+            "browser.press",
             "browser.screenshot",
+            "browser.type",
             "browser.wait_for",
             "deploy.trigger",
             "git.branch",

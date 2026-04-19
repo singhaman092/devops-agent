@@ -25,7 +25,7 @@ from devops_agent.tasks.models import StepResult, TaskState
 class TestBadConfigs:
     def test_invalid_platform_type(self) -> None:
         with pytest.raises(ValidationError):
-            RepoConfig(clone_url="https://x.com/r.git", platform="bitbucket")
+            RepoConfig(clone_url="https://x.com/r.git", platform="svn")
 
     def test_negative_poll_interval(self) -> None:
         with pytest.raises(ValidationError):
