@@ -387,19 +387,28 @@ def validate(path: Path = typer.Argument(..., help="Path to config/type-config/a
 
 @app.command(name="run")
 def run_task(
-    activation_file: Path = typer.Argument(..., help="Path to activation YAML file"),
+    activation_file: Path = typer.Argument(None, help="Path to activation YAML file"),
+    task_config: str = typer.Option(None, "--task-config", "-t", help="Task config name (shortcut — no activation file needed for zero-variable tasks)"),
 ) -> None:
-    """Run a task from an activation file."""
-    try:
-        activation = load_activation(activation_file)
-    except ConfigError as e:
-        console.print(f"{FAIL} Invalid activation file: {e}")
+    """Run a task from an activation file or by task-config name."""
+    if task_config:
+        # Shortcut: create activation inline from task-config name
+        from devops_agent.config.schema import Activation
+        activation = Activation(task_config=task_config)
+    elif activation_file:
+        try:
+            activation = load_activation(activation_file)
+        except ConfigError as e:
+            console.print(f"{FAIL} Invalid activation file: {e}")
+            raise typer.Exit(1)
+    else:
+        console.print(f"{FAIL} Provide either an activation file or --task-config name")
         raise typer.Exit(1)
 
     task_id = activation.task_id or ""
     state = create_task(
         task_config_name=activation.task_config,
-        activation_file=str(activation_file),
+        activation_file=str(activation_file or task_config),
         variables=activation.variables,
         task_id=task_id,
     )

@@ -1,60 +1,128 @@
-name: "Run Enetro Develop Pipeline"
-description: "Trigger the develop pipeline for enetro-product on Bitbucket"
+name: run-enetro-develop-pipeline
+description: Trigger the develop branch pipeline on enetro-product Bitbucket repo (JIRA-4444)
 
 steps:
   - step: browser.navigate
-    name: "Navigate to pipelines"
+    name: "Go to pipelines page"
     params:
       url: "https://bitbucket.org/enetro-ai/enetro-product/pipelines"
-      wait_until: "networkidle"
-
-  - step: browser.screenshot
-    name: "Debug: pipelines page loaded"
-    params:
-      filename: "pipelines_page.png"
-      full_page: true
-
-  - step: browser.wait_for
-    name: "Wait for pipeline list to load"
-    params:
-      selector: "button, a"
-      state: "visible"
-      timeout: 10000
-
-  - step: browser.screenshot
-    name: "Debug: after wait"
-    params:
-      filename: "after_wait.png"
-      full_page: false
+      wait_until: networkidle
 
   - step: browser.eval
-    name: "Find and click develop pipeline"
+    name: "Click Run pipeline button"
     params:
-      expression: "(() => { let developLink = [...document.querySelectorAll('a, button')].find(el => el.textContent.toLowerCase().includes('develop')); if (developLink) { developLink.click(); return 'Clicked develop'; } return 'No develop found'; })()"
+      expression: >
+        (() => {
+          const btn = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Run pipeline');
+          if (!btn) return 'not found';
+          btn.click();
+          return 'clicked';
+        })()
 
   - step: wait.sleep
-    name: "Wait for navigation"
+    name: "Wait for dialog"
+    params:
+      seconds: 2
+
+  - step: browser.eval
+    name: "Type develop in branch selector"
+    params:
+      expression: >
+        (() => {
+          const input = document.querySelector('[data-testid="branch-selector-select--select--input"]');
+          if (!input) return 'branch input not found';
+          input.focus();
+          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+          nativeInputValueSetter.call(input, 'develop');
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          return 'typed develop';
+        })()
+
+  - step: wait.sleep
+    name: "Wait for branch dropdown options"
+    params:
+      seconds: 2
+
+  - step: browser.eval
+    name: "Click develop branch option"
+    params:
+      expression: >
+        (() => {
+          const options = [...document.querySelectorAll('[class*="option"]')];
+          const develop = options.find(o => o.textContent.trim() === 'develop');
+          if (!develop) {
+            const all = options.map(o => o.textContent.trim().slice(0, 40));
+            return 'develop not found, options: ' + JSON.stringify(all);
+          }
+          develop.click();
+          return 'clicked develop';
+        })()
+
+  - step: wait.sleep
+    name: "Wait for pipeline dropdown to enable"
+    params:
+      seconds: 2
+
+  - step: browser.eval
+    name: "Open pipeline dropdown"
+    params:
+      expression: >
+        (() => {
+          const input = document.querySelector('#react-select-run-pipeline-selector-select-input');
+          if (!input) return 'pipeline input not found';
+          const container = input.closest('[class*="-container"]');
+          if (!container) return 'container not found';
+          const control = container.querySelector('[class*="-control"]');
+          if (!control) return 'control not found';
+          control.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+          return 'dispatched mousedown on control';
+        })()
+
+  - step: wait.sleep
+    name: "Wait for pipeline options to appear"
+    params:
+      seconds: 2
+
+  - step: browser.eval
+    name: "Click branches: develop pipeline option"
+    params:
+      expression: >
+        (() => {
+          const menu = document.querySelector('[class*="-menu"]');
+          if (!menu) return 'menu not found';
+          const options = [...menu.querySelectorAll('[class*="-option"]')];
+          if (options.length === 0) return 'no options in menu';
+          const texts = options.map(o => o.textContent.trim());
+          const developOption = options.find(o => o.textContent.trim() === 'branches: develop');
+          if (!developOption) return 'branches: develop not found, available: ' + JSON.stringify(texts);
+          developOption.click();
+          return 'clicked branches: develop';
+        })()
+
+  - step: wait.sleep
+    name: "Wait for Run button to be enabled"
     params:
       seconds: 2
 
   - step: browser.screenshot
-    name: "Debug: after develop click"
+    name: "Debug: ready to run"
     params:
-      filename: "after_develop_click.png"
-      full_page: true
+      filename: "06_ready_to_run.png"
+      full_page: false
 
-  - step: browser.eval
-    name: "Trigger pipeline run"
+  - step: browser.click
+    name: "Click Run button"
     params:
-      expression: "(() => { let btn = [...document.querySelectorAll('button')].find(b => { let t = b.textContent.toLowerCase(); return t.includes('run') || t.includes('trigger'); }); if (btn && !btn.disabled) { btn.click(); return 'Triggered'; } return 'No button'; })()"
+      selector: '[data-testid="run-pipeline"]'
+      timeout: 10000
 
   - step: wait.sleep
     name: "Wait for pipeline to start"
     params:
-      seconds: 3
+      seconds: 5
 
   - step: browser.screenshot
-    name: "Pipeline triggered"
+    name: "Debug: after run clicked"
     params:
-      filename: "pipeline_triggered.png"
-      full_page: true
+      filename: "07_after_run.png"
+      full_page: false

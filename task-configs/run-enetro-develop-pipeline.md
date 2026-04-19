@@ -1,42 +1,32 @@
-# Run Enetro Develop Pipeline
-
-**Ticket**: JIRA-4328
+# run-enetro-develop-pipeline
 
 ## What it does
-Automatically triggers the develop pipeline on Bitbucket for the enetro-product repository.
+Manually triggers the `branches: develop` pipeline on the `develop` branch of the `enetro-product` Bitbucket repo. This deploys to the **ECS dev env (Enetro)**.
 
-## How to run it
+## Ticket
+JIRA-4444
 
-### Via MCP (Claude Code)
-```
-run_task(activation_yaml="task_config: run-enetro-develop-pipeline\nvariables: {}")
-```
+## How to run
 
-### Via CLI
+### CLI
 ```bash
-uv run devops-agent run task-configs/run-enetro-develop-pipeline.yaml
+uv run devops-agent run --task-config run-enetro-develop-pipeline
 ```
 
-## Prerequisites
-- Must be authenticated to Bitbucket: `uv run devops-agent init`
-- Requires access to https://bitbucket.org/enetro-ai/enetro-product
+### MCP (via AI assistant)
+```
+run_task("task_config: run-enetro-develop-pipeline\nvariables: {}")
+```
 
-## Steps
-1. Navigate to the Bitbucket pipelines page
-2. Wait for the pipeline list to load
-3. Find and click the "develop" branch link
-4. Click the "Run" or "Trigger" button to start the pipeline
-5. Confirm pipeline has started
-
-## Selectors used
-- Pipelines page: `https://bitbucket.org/enetro-ai/enetro-product/pipelines`
-- Develop link detection: JavaScript text matching for "develop" (case-insensitive)
-- Run button detection: JavaScript text matching for "run" or "trigger"
-
-## Notes
-- Uses JavaScript evaluation for robust element detection since Bitbucket's UI is React-based
-- Includes debug screenshots at key points for troubleshooting
-- Retry-safe: uses text content matching instead of fragile CSS selectors
+## Variables
+None required.
 
 ## Original prompt
-User asked to generate task config for running develop pipeline for https://bitbucket.org/enetro-ai/enetro-product/src/main/
+> "run devops-agent and configure repo https://bitbucket.org/enetro-ai/enetro-product/src/main/ to run develop pipeline"
+
+## Notes
+- The Bitbucket "Run Pipeline" dialog has two dropdowns: Branch and Pipeline type.
+- Branch is a react-select (testid: `branch-selector-select--select--input`) — typed via native value setter + input event dispatch.
+- Pipeline dropdown (id: `react-select-run-pipeline-selector-select-input`) is opened via `mousedown` on the control div.
+- The `branches: develop` option deploys to ECS dev env. Available options on develop branch: `branches: beta`, `branches: develop`, `branches: main`.
+- The Run button (`data-testid="run-pipeline"`) must be clicked via `browser.click` (JS `.click()` alone does not submit the form).
