@@ -12,18 +12,42 @@ Step-by-step guide for setting up and using devops-agent on your machine.
 - Python 3.11+ ([python.org/downloads](https://www.python.org/downloads/))
 - Git for Windows ([git-scm.com](https://git-scm.com/download/win)) — provides Git Bash
 - Microsoft Edge (pre-installed on Windows)
-- uv ([docs.astral.sh/uv](https://docs.astral.sh/uv/getting-started/installation/)) — `pip install uv` if you don't have it
 
-### Clone and install
+### Step 1: Install uv (Python package manager)
+
+Open a terminal (PowerShell or Command Prompt) and run:
 
 ```bash
-git clone https://github.com/singhaman092/devops-agent.git
+pip install uv
+```
+
+Verify it installed:
+```bash
+uv --version
+```
+
+If `pip` isn't found, install Python first from [python.org](https://www.python.org/downloads/) and make sure "Add to PATH" is checked during install.
+
+### Step 2: Clone the repo and install dependencies
+
+```bash
+cd C:\Code
+git clone <repo-url> devops-agent
 cd devops-agent
 uv sync
+```
+
+Replace `<repo-url>` with the URL your team provided.
+
+### Step 3: Install Playwright browsers
+
+```bash
 uv run python scripts/install_playwright_browsers.py
 ```
 
-### Verify
+This downloads the Chromium/Edge driver that the agent uses for browser automation.
+
+### Step 4: Verify
 
 ```bash
 uv run devops-agent doctor

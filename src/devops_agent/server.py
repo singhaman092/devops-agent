@@ -304,8 +304,8 @@ def create_server() -> FastMCP:
                     files.append(f"task-configs/{f.name}")
         return {
             "config_dir": str(config_dir),
-            "exists": config_dir.exists(),
-            "files": files,
+            "exists": str(config_dir.exists()),
+            "files": ", ".join(files) if files else "(empty)",
         }
 
     # ── TASK CONFIG AUTHORING TOOLS ────────────────────────────────────────────
