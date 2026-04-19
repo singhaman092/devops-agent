@@ -11,17 +11,19 @@ from pathlib import Path
 # Suppress noisy asyncio cleanup warnings on Windows during Playwright teardown
 warnings.filterwarnings("ignore", message="unclosed transport", category=ResourceWarning)
 
-# Patch asyncio event loop to suppress "Event loop is closed" RuntimeError on Windows
-# This happens when Playwright's subprocess transports are garbage collected after the loop closes
-_original_del = asyncio.proactor_events._ProactorBasePipeTransport.__del__  # type: ignore[attr-defined]
-
-def _silenced_del(self: object, _warn: object = None) -> None:  # type: ignore[no-untyped-def]
-    try:
-        _original_del(self)
-    except RuntimeError:
-        pass
-
-asyncio.proactor_events._ProactorBasePipeTransport.__del__ = _silenced_del  # type: ignore[attr-defined]
+# Patch asyncio to suppress "Event loop is closed" RuntimeError on Windows
+# Playwright subprocess transports trigger this during GC after the loop closes
+for _cls_name in ("_ProactorBasePipeTransport", "BaseSubprocessTransport"):
+    for _mod in (asyncio.proactor_events, asyncio.base_subprocess):
+        _cls = getattr(_mod, _cls_name, None)
+        if _cls and hasattr(_cls, "__del__"):
+            _orig = _cls.__del__
+            def _patched(self: object, _orig_fn: object = _orig) -> None:  # type: ignore[no-untyped-def]
+                try:
+                    _orig_fn(self)  # type: ignore[operator]
+                except RuntimeError:
+                    pass
+            _cls.__del__ = _patched  # type: ignore[attr-defined]
 
 import typer
 from rich.console import Console
