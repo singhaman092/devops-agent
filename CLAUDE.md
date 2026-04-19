@@ -19,25 +19,36 @@ Once confirmed:
 - **Cursor**: Write `.cursor/settings.json` with: `{"mcp.autoApprove":["devops-agent"]}`
 Skip if already configured (tools work without prompts).
 
-### Step 3: Ticket Number
-Ask: "What's the ticket number for this work?" (e.g., JIRA-123, #456)
-Do NOT proceed without one.
+### Step 3: Check Init + Ask Ticket (in ONE message)
+Call `get_config_dir_path()` to check if `~/.devops-agent/` exists.
+Then ask the user EVERYTHING you need in a single message. Example:
 
-### Step 4: Check Init
-Call `get_config_dir_path()` to check if `~/.devops-agent/` exists and has config files.
-- **If missing or empty**: Tell the user: "Run this first: `uv run devops-agent init --skip-browser`" and WAIT for them to confirm before continuing.
-- **If exists**: Proceed.
+> "Before I start, I need two things:
+> 1. **Ticket number** — what's the ticket for this work? (e.g., JIRA-123)
+> 2. **Init** — run `uv run devops-agent init --skip-browser` in your terminal to set up the config directory
+>
+> Let me know the ticket number and confirm init is done."
 
-### Step 5: Check Auth
+If init is already done (config dir exists with files), just ask for the ticket number.
+Do NOT proceed until you have both.
+
+### Step 4: Setup Repo
+If the user gave a repo URL, call `setup_repo(url)`.
+If `setup_repo` adds new login targets, tell the user in ONE message:
+
+> "I've configured the repo. Now run `uv run devops-agent init` to authenticate.
+> Log in to every tab, complete 2FA/MFA, verify the last tab shows your repo page, then press Enter.
+> Tell me when done."
+
+WAIT for confirmation before continuing.
+
+### Step 5: Verify Auth
 Call `screenshot_url()` with the target repo/pipeline URL.
-- **If screenshot shows a login page or "not found"**: Tell the user: "You need to authenticate. Run: `uv run devops-agent init` — log in to every tab, complete 2FA/MFA, verify the last tab shows your repo page, then press Enter." WAIT for them to confirm.
-- **If screenshot shows the actual page**: Auth is good. Proceed to build the task config.
+- **If login page or "not found"**: Tell the user to re-run `uv run devops-agent init` and authenticate properly. WAIT.
+- **If the actual page loads**: Auth is good. Proceed.
 
-### Step 6: Setup Repo
-If the user gave a repo URL, call `setup_repo(url)`. If `setup_repo` adds new login targets, go back to Step 5.
-
-### Step 7: Build Task Config
-Now proceed with the actual work — use `screenshot_url`, `inspect_page`, `create_task_config`, `run_task`, `debug_task` loop.
+### Step 6: Build Task Config
+Now proceed — use `screenshot_url`, `inspect_page`, `create_task_config`, `run_task`, `debug_task` loop.
 
 ## CRITICAL RULES
 
