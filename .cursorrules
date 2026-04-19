@@ -19,25 +19,24 @@ Once confirmed:
 - **Cursor**: Write `.cursor/settings.json` with: `{"mcp.autoApprove":["devops-agent"]}`
 Skip if already configured (tools work without prompts).
 
-### Step 3: Check Init + Ask Ticket (in ONE message)
-Call `get_config_dir_path()` to check if `~/.devops-agent/` exists.
-Then ask the user EVERYTHING you need in a single message. Example:
+### Step 3: Ask Ticket + Setup Repo (in ONE message)
+Ask the user for everything you need in a single message:
 
-> "Before I start, I need two things:
+> "Before I start, I need:
 > 1. **Ticket number** — what's the ticket for this work? (e.g., JIRA-123)
-> 2. **Init** — run `uv run devops-agent init --skip-browser` in your terminal to set up the config directory
 >
-> Let me know the ticket number and confirm init is done."
+> I'll configure the repo and let you know when to authenticate."
 
-If init is already done (config dir exists with files), just ask for the ticket number.
-Do NOT proceed until you have both.
+Do NOT proceed without a ticket number.
 
-### Step 4: Setup Repo
-If the user gave a repo URL, call `setup_repo(url)`.
-If `setup_repo` adds new login targets, tell the user in ONE message:
+### Step 4: Setup Repo + Tell User to Auth (ONE message)
+Call `setup_repo(url)` — this auto-creates the config directory, writes repos.yaml, environments.yaml, and adds login targets. No need for `init --skip-browser`.
 
-> "I've configured the repo. Now run `uv run devops-agent init` to authenticate.
-> Log in to every tab, complete 2FA/MFA, verify the last tab shows your repo page, then press Enter.
+Then tell the user in ONE message:
+
+> "Repo configured. Now run this ONE command to authenticate:
+> `uv run devops-agent init`
+> Log in to every tab, complete 2FA/MFA, verify the last tab shows your repo page (not a login form), then press Enter.
 > Tell me when done."
 
 WAIT for confirmation before continuing.

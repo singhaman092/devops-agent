@@ -306,9 +306,24 @@ def create_server() -> FastMCP:
             login_dashboard = "https://login.microsoftonline.com"
             login_target = f"https://dev.azure.com/{org}"
 
+        # ── Ensure config dir exists ───────────────────────────────────────
+        from devops_agent.config.paths import ensure_dirs
+        config_dir = get_config_dir()
+        ensure_dirs()
+
+        # Create default config files if they don't exist
+        for fname, default in [
+            ("config.yaml", "work_dir: '~/.devops-agent/work'\nedge_profile_dir: '~/.devops-agent/edge-profile'\nlog_level: INFO\nlog_json: true\nlogin_targets: []\n"),
+            ("repos.yaml", "repos: {}\n"),
+            ("environments.yaml", "environments: {}\n"),
+            ("notifications.yaml", "channels: {}\ntemplates: {}\n"),
+        ]:
+            fpath = config_dir / fname
+            if not fpath.exists():
+                fpath.write_text(default, encoding="utf-8")
+
         # ── Update repos.yaml ──────────────────────────────────────────────
         from devops_agent.config.loader import load_repos_config
-        config_dir = get_config_dir()
         repos = load_repos_config(config_dir)
         repo_data = repos.model_dump()
 
