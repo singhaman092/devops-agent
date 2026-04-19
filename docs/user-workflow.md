@@ -63,13 +63,13 @@ You should see all green OKs.
 
 ---
 
-## Phase 2: Add your repo
+## Phase 2: Add your repo + authenticate
 
-Tell your AI assistant (Cursor or Claude Code) your repo URL. The agent auto-detects everything:
+Tell your AI assistant (Cursor or Claude Code) your repo URL:
 
 > "Set up devops-agent for https://bitbucket.org/myteam/my-api"
 
-The AI calls `setup_repo("https://bitbucket.org/myteam/my-api")` which automatically:
+The AI calls `setup_repo` which automatically:
 - Detects the platform (Bitbucket, GitHub, GitLab, Azure DevOps)
 - Generates PR creation and view URL templates
 - Adds the repo to `repos.yaml`
@@ -88,24 +88,25 @@ If you need notifications, tell the AI:
 
 > "Also set up Slack notifications to https://app.slack.com/client/T12345/C12345"
 
----
+### Now authenticate
 
-## Phase 3: Authenticate
-
-After the repo is configured, the AI will tell you to run init:
+The AI will tell you login targets were added. Run init to log in:
 
 ```bash
 uv run devops-agent init
 ```
 
 What happens:
-1. Edge opens with login pages for your platform
+1. Edge opens with login pages for your platform (one tab per login target)
 2. **You log in to each tab** (SSO, username/password, 2FA — whatever your platform needs)
-3. Come back to the terminal and press Enter
-4. Agent saves the browser profile (cookies, sessions)
-5. Agent verifies sessions are warm with a headless check
+3. **Verify the last tab shows your repo page (not a 404 or login form)**
+4. Come back to the terminal and press Enter
+5. Agent saves the browser profile (cookies, sessions)
+6. Agent verifies sessions are warm with a headless check
 
 **If the headless check fails**: run `uv run devops-agent init` again and make sure each tab shows the logged-in page before pressing Enter.
+
+You can add more repos later by telling the AI again — it will add login targets and tell you to re-run init.
 
 ---
 
