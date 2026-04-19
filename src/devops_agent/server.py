@@ -210,7 +210,105 @@ def create_server() -> FastMCP:
             "notification_templates": list(notifs.templates.keys()),
         }
 
-    # ── AUTHORING TOOLS ────────────────────────────────────────────────────────
+    # ── CONFIG FILE TOOLS ─────────────────────────────────────────────────────
+    # These give the AI agent access to ~/.devops-agent/ config files
+    # since the agent typically only has access to the repo directory.
+
+    @mcp.tool()
+    def read_config_file(filename: str) -> dict[str, Any]:
+        """Read a global config file from ~/.devops-agent/.
+
+        Use this to read config.yaml, repos.yaml, environments.yaml, or notifications.yaml.
+        The AI agent may not have filesystem access to ~/.devops-agent/ — this tool provides it.
+
+        Args:
+            filename: One of: config.yaml, repos.yaml, environments.yaml, notifications.yaml
+        """
+        allowed = {"config.yaml", "repos.yaml", "environments.yaml", "notifications.yaml"}
+        if filename not in allowed:
+            return {"error": f"Invalid filename. Must be one of: {', '.join(sorted(allowed))}"}
+        path = get_config_dir() / filename
+        if not path.exists():
+            return {"error": f"{filename} not found at {path}. Run 'devops-agent init' first."}
+        return {
+            "filename": filename,
+            "path": str(path),
+            "content": path.read_text(encoding="utf-8"),
+        }
+
+    @mcp.tool()
+    def write_config_file(filename: str, content: str) -> dict[str, str]:
+        """Write a global config file to ~/.devops-agent/.
+
+        Use this to configure repos, environments, notifications, or agent settings.
+        The AI agent may not have filesystem access to ~/.devops-agent/ — this tool provides it.
+
+        Validates the content before writing. Will not overwrite with invalid YAML.
+
+        Args:
+            filename: One of: config.yaml, repos.yaml, environments.yaml, notifications.yaml
+            content: The complete YAML content to write.
+        """
+        allowed = {"config.yaml", "repos.yaml", "environments.yaml", "notifications.yaml"}
+        if filename not in allowed:
+            return {"error": f"Invalid filename. Must be one of: {', '.join(sorted(allowed))}"}
+
+        # Validate YAML syntax
+        try:
+            data = yaml.safe_load(content)
+            if data is not None and not isinstance(data, dict):
+                return {"status": "invalid", "error": "YAML must be a mapping (dict), not a list or scalar"}
+        except yaml.YAMLError as e:
+            return {"status": "invalid", "error": f"Invalid YAML: {e}"}
+
+        # Validate against schema
+        from devops_agent.config.schema import (
+            AgentConfig,
+            EnvironmentsConfig,
+            NotificationsConfig,
+            ReposConfig,
+        )
+        schema_map = {
+            "config.yaml": AgentConfig,
+            "repos.yaml": ReposConfig,
+            "environments.yaml": EnvironmentsConfig,
+            "notifications.yaml": NotificationsConfig,
+        }
+        try:
+            model = schema_map[filename]
+            if data:
+                model(**data)
+        except Exception as e:
+            return {"status": "invalid", "error": str(e)}
+
+        path = get_config_dir() / filename
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+        return {"status": "written", "path": str(path)}
+
+    @mcp.tool()
+    def get_config_dir_path() -> dict[str, str]:
+        """Return the path to the ~/.devops-agent/ config directory and list its contents.
+
+        Useful for the AI agent to understand what's configured and where files live.
+        """
+        config_dir = get_config_dir()
+        files: list[str] = []
+        if config_dir.exists():
+            for f in sorted(config_dir.iterdir()):
+                if f.is_file():
+                    files.append(f.name)
+            tc_dir = config_dir / "task-configs"
+            if tc_dir.exists():
+                for f in sorted(tc_dir.glob("*.yaml")):
+                    files.append(f"task-configs/{f.name}")
+        return {
+            "config_dir": str(config_dir),
+            "exists": config_dir.exists(),
+            "files": files,
+        }
+
+    # ── TASK CONFIG AUTHORING TOOLS ────────────────────────────────────────────
 
     @mcp.tool()
     def create_task_config(name: str, yaml_content: str) -> dict[str, str]:

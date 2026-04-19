@@ -104,6 +104,7 @@ Add to `~/.cursor/mcp.json`:
 
 ## Documentation
 
+- **[User Workflow Guide](docs/user-workflow.md)** (start here)
 - [Getting Started](docs/getting-started.md)
 - [Step Primitives Reference](docs/step-primitives.md)
 - [Authoring Task Configs](docs/authoring-type-configs.md) (dev-facing)
