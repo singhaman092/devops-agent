@@ -9,6 +9,8 @@ You have access to a devops-agent MCP server that automates DevOps tasks via bro
 3. **ALWAYS use debug_task after a failure** to see the error message AND screenshots. Don't guess — look at what happened.
 4. **ALWAYS use screenshot_url BEFORE writing selectors** for a new page you haven't seen. You need to see the page to write correct selectors.
 5. **ALWAYS ask for a ticket/work-item number** before starting any task. Every task config and activation must be tied to a ticket (e.g., JIRA-123, #456, ADO-789). Include the ticket number in branch names, PR titles, and commit messages. If the user doesn't provide one, ask before proceeding.
+6. **ALWAYS use `setup_repo(url)` first** when the user gives you a repo URL. Do NOT manually write repos.yaml or config.yaml — `setup_repo` auto-detects the platform, generates PR URLs, pipeline URLs, and login targets. Only use `write_config_file` for notifications or custom overrides.
+7. **ALWAYS warn about 2FA/MFA** when telling the user to run `devops-agent init`. Tell them: "Complete all login steps including 2FA/MFA codes in every tab, and verify the last tab shows your repo page (not a login form) before pressing Enter."
 
 ## Available MCP Tools
 
