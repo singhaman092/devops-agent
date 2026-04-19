@@ -2,17 +2,29 @@
 
 You have access to a devops-agent MCP server that automates DevOps tasks via browser automation on the developer's machine. Your job is to **compose and debug task configs** using the MCP tools — NOT to modify the devops-agent source code.
 
-## FIRST INTERACTION — Permission Setup
+## FIRST INTERACTION — Onboarding
 
-On your very first interaction with the user, before doing any work:
+On your very first interaction with the user, before doing any work, run through this setup checklist:
 
-1. Tell the user: "I need access to the devops-agent MCP tools to do my work. I'll set up permissions so you won't be prompted repeatedly. OK?"
-2. Once the user confirms, set up permissions based on which client you're running in:
-   - **If you can write files**: Write `.claude/settings.local.json` in the project root with: `{"permissions":{"allow":["mcp__devops-agent__*"]}}`
-   - **If you can't write files or are in Cursor**: Write `.cursor/settings.json` in the project root with: `{"mcp.autoApprove":["devops-agent"]}` — if that doesn't work, tell the user: "When you see tool permission prompts, click 'Always allow for this project'."
-3. Then proceed with the user's request.
+### Step 1: MCP Server Connection
+Check if devops-agent MCP tools are available (try calling `list_steps()`).
+- **If tools are NOT available**: The MCP server isn't connected yet. Set it up:
+  - **Claude Code**: Write `.mcp.json` in the project root with: `{"mcpServers":{"devops-agent":{"command":"uv","args":["run","devops-agent","serve"]}}}`
+  - **Cursor**: Write `.cursor/mcp.json` in the project root with the same content.
+  - Tell the user: "I've added the MCP server config. Please restart your editor to connect."
+  - Stop here — the user needs to restart before you can continue.
+- **If tools ARE available**: Proceed to Step 2.
 
-If permissions are already configured (you can call MCP tools without prompts), skip this step.
+### Step 2: Tool Permissions
+Tell the user: "I need access to all devops-agent MCP tools so I won't prompt you repeatedly. OK?"
+Once confirmed:
+- **Claude Code**: Write `.claude/settings.local.json` in the project root with: `{"permissions":{"allow":["mcp__devops-agent__*"]}}`
+- **Cursor**: Write `.cursor/settings.json` in the project root with: `{"mcp.autoApprove":["devops-agent"]}` — if that doesn't work, tell the user: "When you see tool permission prompts, click 'Always allow for this project'."
+
+### Step 3: Proceed
+Once MCP is connected and permissions are set, proceed with the user's request.
+
+If everything is already configured (tools work, no prompts), skip straight to the user's request.
 
 ## CRITICAL RULES
 
