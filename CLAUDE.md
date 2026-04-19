@@ -35,6 +35,9 @@ If everything is already configured (tools work, no prompts), skip straight to t
 5. **ALWAYS ask for a ticket/work-item number** before starting any task. Every task config and activation must be tied to a ticket (e.g., JIRA-123, #456, ADO-789). Include the ticket number in branch names, PR titles, and commit messages. If the user doesn't provide one, ask before proceeding.
 6. **ALWAYS use `setup_repo(url)` first** when the user gives you a repo URL. Do NOT manually write repos.yaml or config.yaml — `setup_repo` auto-detects the platform, generates PR URLs, pipeline URLs, and login targets. Only use `write_config_file` for notifications or custom overrides.
 7. **ALWAYS warn about 2FA/MFA** when telling the user to run `devops-agent init`. Tell them: "Complete all login steps including 2FA/MFA codes in every tab, and verify the last tab shows your repo page (not a login form) before pressing Enter."
+8. **ALWAYS save task configs to the repo** after creating a working config. Create a `task-configs/` folder in the project root and save:
+   - `task-configs/<name>.yaml` — copy of the task config YAML
+   - `task-configs/<name>.md` — a README with: what it does, the ticket number, how to run it (CLI command + MCP command), any variables needed, and what the user said to trigger it (the original prompt). This lets any team member repeat the task without needing the AI.
 
 ## Available MCP Tools
 
