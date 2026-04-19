@@ -1,0 +1,60 @@
+name: "Run Enetro Develop Pipeline"
+description: "Trigger the develop pipeline for enetro-product on Bitbucket"
+
+steps:
+  - step: browser.navigate
+    name: "Navigate to pipelines"
+    params:
+      url: "https://bitbucket.org/enetro-ai/enetro-product/pipelines"
+      wait_until: "networkidle"
+
+  - step: browser.screenshot
+    name: "Debug: pipelines page loaded"
+    params:
+      filename: "pipelines_page.png"
+      full_page: true
+
+  - step: browser.wait_for
+    name: "Wait for pipeline list to load"
+    params:
+      selector: "button, a"
+      state: "visible"
+      timeout: 10000
+
+  - step: browser.screenshot
+    name: "Debug: after wait"
+    params:
+      filename: "after_wait.png"
+      full_page: false
+
+  - step: browser.eval
+    name: "Find and click develop pipeline"
+    params:
+      expression: "(() => { let developLink = [...document.querySelectorAll('a, button')].find(el => el.textContent.toLowerCase().includes('develop')); if (developLink) { developLink.click(); return 'Clicked develop'; } return 'No develop found'; })()"
+
+  - step: wait.sleep
+    name: "Wait for navigation"
+    params:
+      seconds: 2
+
+  - step: browser.screenshot
+    name: "Debug: after develop click"
+    params:
+      filename: "after_develop_click.png"
+      full_page: true
+
+  - step: browser.eval
+    name: "Trigger pipeline run"
+    params:
+      expression: "(() => { let btn = [...document.querySelectorAll('button')].find(b => { let t = b.textContent.toLowerCase(); return t.includes('run') || t.includes('trigger'); }); if (btn && !btn.disabled) { btn.click(); return 'Triggered'; } return 'No button'; })()"
+
+  - step: wait.sleep
+    name: "Wait for pipeline to start"
+    params:
+      seconds: 3
+
+  - step: browser.screenshot
+    name: "Pipeline triggered"
+    params:
+      filename: "pipeline_triggered.png"
+      full_page: true

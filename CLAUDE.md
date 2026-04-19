@@ -2,40 +2,51 @@
 
 You have access to a devops-agent MCP server that automates DevOps tasks via browser automation on the developer's machine. Your job is to **compose and debug task configs** using the MCP tools — NOT to modify the devops-agent source code.
 
-## FIRST INTERACTION — Onboarding
+## MANDATORY STEPS — Follow this exact order every time
 
-On your very first interaction with the user, before doing any work, run through this setup checklist:
+When the user gives you a task, follow these steps IN ORDER. Do not skip ahead.
 
 ### Step 1: MCP Server Connection
-Check if devops-agent MCP tools are available (try calling `list_steps()`).
-- **If tools are NOT available**: The MCP server isn't connected yet. Set it up:
-  - **Claude Code**: Write `.mcp.json` in the project root with: `{"mcpServers":{"devops-agent":{"command":"uv","args":["run","devops-agent","serve"]}}}`
-  - **Cursor**: Write `.cursor/mcp.json` in the project root with the same content.
-  - Tell the user: "I've added the MCP server config. Please restart your editor to connect."
-  - Stop here — the user needs to restart before you can continue.
-- **If tools ARE available**: Proceed to Step 2.
+Try calling `list_steps()`. If it fails, the MCP server isn't connected:
+- **Claude Code**: Write `.mcp.json` in the project root with: `{"mcpServers":{"devops-agent":{"command":"uv","args":["run","devops-agent","serve"]}}}`
+- **Cursor**: Write `.cursor/mcp.json` with the same content.
+- Tell the user to restart their editor. STOP here.
 
 ### Step 2: Tool Permissions
-Tell the user: "I need access to all devops-agent MCP tools so I won't prompt you repeatedly. OK?"
+Ask the user: "I need access to all devops-agent MCP tools. OK?"
 Once confirmed:
-- **Claude Code**: Write `.claude/settings.local.json` in the project root with: `{"permissions":{"allow":["mcp__devops-agent__*"]}}`
-- **Cursor**: Write `.cursor/settings.json` in the project root with: `{"mcp.autoApprove":["devops-agent"]}` — if that doesn't work, tell the user: "When you see tool permission prompts, click 'Always allow for this project'."
+- **Claude Code**: Write `.claude/settings.local.json` with: `{"permissions":{"allow":["mcp__devops-agent__*"]}}`
+- **Cursor**: Write `.cursor/settings.json` with: `{"mcp.autoApprove":["devops-agent"]}`
+Skip if already configured (tools work without prompts).
 
-### Step 3: Proceed
-Once MCP is connected and permissions are set, proceed with the user's request.
+### Step 3: Ticket Number
+Ask: "What's the ticket number for this work?" (e.g., JIRA-123, #456)
+Do NOT proceed without one.
 
-If everything is already configured (tools work, no prompts), skip straight to the user's request.
+### Step 4: Check Init
+Call `get_config_dir_path()` to check if `~/.devops-agent/` exists and has config files.
+- **If missing or empty**: Tell the user: "Run this first: `uv run devops-agent init --skip-browser`" and WAIT for them to confirm before continuing.
+- **If exists**: Proceed.
+
+### Step 5: Check Auth
+Call `screenshot_url()` with the target repo/pipeline URL.
+- **If screenshot shows a login page or "not found"**: Tell the user: "You need to authenticate. Run: `uv run devops-agent init` — log in to every tab, complete 2FA/MFA, verify the last tab shows your repo page, then press Enter." WAIT for them to confirm.
+- **If screenshot shows the actual page**: Auth is good. Proceed to build the task config.
+
+### Step 6: Setup Repo
+If the user gave a repo URL, call `setup_repo(url)`. If `setup_repo` adds new login targets, go back to Step 5.
+
+### Step 7: Build Task Config
+Now proceed with the actual work — use `screenshot_url`, `inspect_page`, `create_task_config`, `run_task`, `debug_task` loop.
 
 ## CRITICAL RULES
 
-1. **NEVER modify files in src/devops_agent/**. The agent is a fixed tool. You compose tasks from its step primitives via YAML configs.
-2. **ALWAYS use the MCP tools** to do your work. You do NOT have filesystem access to `~/.devops-agent/` — use the MCP tools to read/write configs there.
-3. **ALWAYS use debug_task after a failure** to see the error message AND screenshots. Don't guess — look at what happened.
-4. **ALWAYS use screenshot_url BEFORE writing selectors** for a new page you haven't seen. You need to see the page to write correct selectors.
-5. **ALWAYS ask for a ticket/work-item number** before starting any task. Every task config and activation must be tied to a ticket (e.g., JIRA-123, #456, ADO-789). Include the ticket number in branch names, PR titles, and commit messages. If the user doesn't provide one, ask before proceeding.
-6. **ALWAYS use `setup_repo(url)` first** when the user gives you a repo URL. Do NOT manually write repos.yaml or config.yaml — `setup_repo` auto-detects the platform, generates PR URLs, pipeline URLs, and login targets. Only use `write_config_file` for notifications or custom overrides.
-7. **ALWAYS warn about 2FA/MFA** when telling the user to run `devops-agent init`. Tell them: "Complete all login steps including 2FA/MFA codes in every tab, and verify the last tab shows your repo page (not a login form) before pressing Enter."
-8. **ALWAYS save task configs to the repo** after creating a working config. Create a `task-configs/` folder in the project root and save:
+1. **NEVER modify files in src/devops_agent/**. The agent is a fixed tool. You compose tasks via YAML configs.
+2. **ALWAYS use the MCP tools**. You do NOT have filesystem access to `~/.devops-agent/`.
+3. **ALWAYS use debug_task after a failure**. Don't guess — look at the error and screenshots.
+4. **ALWAYS use screenshot_url BEFORE writing selectors** for a new page.
+5. **ALWAYS use `setup_repo(url)` first** when given a repo URL. Do NOT manually write repos.yaml.
+6. **ALWAYS save task configs to the repo** after creating a working config. Create a `task-configs/` folder in the project root and save:
    - `task-configs/<name>.yaml` — copy of the task config YAML
    - `task-configs/<name>.md` — a README with: what it does, the ticket number, how to run it (CLI command + MCP command), any variables needed, and what the user said to trigger it (the original prompt). This lets any team member repeat the task without needing the AI.
 
