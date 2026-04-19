@@ -776,6 +776,7 @@ def create_server() -> FastMCP:
         profile_dir = config.edge_profile_dir
         profile_dir.mkdir(parents=True, exist_ok=True)
 
+        context = None
         try:
             context = await create_persistent_context(profile_dir, headless=False)
             page = context.pages[0] if context.pages else await context.new_page()
@@ -794,8 +795,6 @@ def create_server() -> FastMCP:
             title = await page.title()
             current_url = page.url
 
-            await close_context(context)
-
             return {
                 "screenshot_path": str(path),
                 "url": current_url,
@@ -804,6 +803,9 @@ def create_server() -> FastMCP:
             }
         except Exception as e:
             return {"error": str(e)}
+        finally:
+            if context:
+                await close_context(context)
 
     @mcp.tool()
     async def inspect_page(url: str, javascript: str) -> dict[str, Any]:
@@ -825,6 +827,7 @@ def create_server() -> FastMCP:
         profile_dir = config.edge_profile_dir
         profile_dir.mkdir(parents=True, exist_ok=True)
 
+        context = None
         try:
             context = await create_persistent_context(profile_dir, headless=False)
             page = context.pages[0] if context.pages else await context.new_page()
@@ -834,14 +837,15 @@ def create_server() -> FastMCP:
             result = await page.evaluate(javascript)
             current_url = page.url
 
-            await close_context(context)
-
             return {
                 "url": current_url,
                 "result": result,
             }
         except Exception as e:
             return {"error": str(e)}
+        finally:
+            if context:
+                await close_context(context)
 
     @mcp.tool()
     def list_tasks(status: str = "all") -> list[dict[str, Any]]:

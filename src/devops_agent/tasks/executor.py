@@ -98,6 +98,8 @@ async def execute_task(task_id: str, resume: bool = False) -> TaskState:
     if not _acquire_lock():
         raise RuntimeError("Another task is already running. Single-task-at-a-time enforced.")
 
+    browser_session = None  # Declare before try so finally can always access it
+
     try:
         # Look up the task config
         tc = task_configs.get(state.task_config_name)

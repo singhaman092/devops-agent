@@ -77,6 +77,9 @@ def setup_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         "devops_agent.tasks.lifecycle.get_tasks_subdir",
         patched_get_tasks_subdir,
     )
+    # Patch the lock file to use the temp dir
+    import devops_agent.tasks.executor as executor_mod
+    monkeypatch.setattr(executor_mod, "_LOCK_FILE", config_dir / "tasks" / "in_progress" / ".lock")
 
     return config_dir
 
