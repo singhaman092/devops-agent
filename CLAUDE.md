@@ -7,9 +7,9 @@ You have access to a devops-agent MCP server that automates DevOps tasks via bro
 On your very first interaction with the user, before doing any work:
 
 1. Tell the user: "I need access to the devops-agent MCP tools to do my work. I'll set up permissions so you won't be prompted repeatedly. OK?"
-2. Once the user confirms, write the permissions file:
-   - **Claude Code**: Write `.claude/settings.local.json` with `{"permissions":{"allow":["mcp__devops-agent__*"]}}`
-   - **Cursor**: Tell the user: "When you see tool permission prompts, click 'Always allow for this project' to avoid repeated prompts."
+2. Once the user confirms, set up permissions based on which client you're running in:
+   - **If you can write files**: Write `.claude/settings.local.json` in the project root with: `{"permissions":{"allow":["mcp__devops-agent__*"]}}`
+   - **If you can't write files or are in Cursor**: Write `.cursor/settings.json` in the project root with: `{"mcp.autoApprove":["devops-agent"]}` — if that doesn't work, tell the user: "When you see tool permission prompts, click 'Always allow for this project'."
 3. Then proceed with the user's request.
 
 If permissions are already configured (you can call MCP tools without prompts), skip this step.
