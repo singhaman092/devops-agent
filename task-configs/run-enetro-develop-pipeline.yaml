@@ -19,10 +19,12 @@ steps:
           return 'clicked';
         })()
 
-  - step: wait.sleep
-    name: "Wait for dialog"
+  - step: browser.wait_for
+    name: "Wait for branch selector to appear in dialog"
     params:
-      seconds: 2
+      selector: '[data-testid="branch-selector-select--select--input"]'
+      state: visible
+      timeout: 10000
 
   - step: browser.eval
     name: "Type develop in branch selector"
@@ -44,16 +46,19 @@ steps:
       seconds: 2
 
   - step: browser.eval
-    name: "Click develop branch option"
+    name: "Click develop branch option (scoped to branch selector menu)"
     params:
       expression: >
         (() => {
-          const options = [...document.querySelectorAll('[class*="option"]')];
+          const input = document.querySelector('[data-testid="branch-selector-select--select--input"]');
+          if (!input) return 'branch input not found';
+          const container = input.closest('[class*="-container"]');
+          if (!container) return 'container not found';
+          const menu = container.querySelector('[class*="-menu"]');
+          if (!menu) return 'menu not found in branch container';
+          const options = [...menu.querySelectorAll('[class*="-option"]')];
           const develop = options.find(o => o.textContent.trim() === 'develop');
-          if (!develop) {
-            const all = options.map(o => o.textContent.trim().slice(0, 40));
-            return 'develop not found, options: ' + JSON.stringify(all);
-          }
+          if (!develop) return 'develop not found, options: ' + JSON.stringify(options.map(o => o.textContent.trim().slice(0,40)));
           develop.click();
           return 'clicked develop';
         })()
@@ -84,14 +89,18 @@ steps:
       seconds: 2
 
   - step: browser.eval
-    name: "Click branches: develop pipeline option"
+    name: "Click branches: develop pipeline option (scoped to pipeline selector menu)"
     params:
       expression: >
         (() => {
-          const menu = document.querySelector('[class*="-menu"]');
-          if (!menu) return 'menu not found';
+          const input = document.querySelector('#react-select-run-pipeline-selector-select-input');
+          if (!input) return 'pipeline input not found';
+          const container = input.closest('[class*="-container"]');
+          if (!container) return 'container not found';
+          const menu = container.querySelector('[class*="-menu"]');
+          if (!menu) return 'menu not found in pipeline container';
           const options = [...menu.querySelectorAll('[class*="-option"]')];
-          if (options.length === 0) return 'no options in menu';
+          if (options.length === 0) return 'no options in pipeline menu';
           const texts = options.map(o => o.textContent.trim());
           const developOption = options.find(o => o.textContent.trim() === 'branches: develop');
           if (!developOption) return 'branches: develop not found, available: ' + JSON.stringify(texts);
